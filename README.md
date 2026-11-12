@@ -51,7 +51,7 @@ Designed specifically for Indian telecommunications (TRAI DLT sender headers, re
 
 Traditional SMS scam classifiers rely on binary classification (`Ham` vs `Scam`). In the Indian telecommunications ecosystem, this naive binary setup causes severe real-world failure modes:
 
-1. **Promotional Misclassification False Positives**: Legitimate retail sales, discount vouchers, and brand promotional SMS (from registered DLT entities like `JK-SMRTBR`, `JM-AJIOIN`, `CP-MAXFSN`) contain words like *"50% OFF"*, *"flat discount"*, *"coupon code"*, and *"free delivery"*. Binary models mistake these marketing words for financial fraud, alarming the user with false positive scam warnings.
+1. **Promotional Misclassification False Positives**: Legitimate retail sales, discount vouchers, and brand promotional SMS (from registered DLT entities like `JK-SMRTBR`, `JM-AJIOIN`, `CP-MAXFSN`) contain words like _"50% OFF"_, _"flat discount"_, _"coupon code"_, and _"free delivery"_. Binary models mistake these marketing words for financial fraud, alarming the user with false positive scam warnings.
 2. **Multilingual & Indic Script Blindness**: Previous ASCII/Latin-centric tokenizers stripped Indic dependent vowel signs (matras: `ा`, `ि`, `ी`), viramas (`्`), and nuktas during accent-stripping passes, collapsing Devanagari (Hindi, Marathi), Dravidian (Tamil, Telugu), and Bengali words into unreadable character sequences or `[UNK]` tokens.
 3. **Edge Resource Constraints on Budget Smartphones**: Low-end Android smartphones commonly used across India (2GB–3GB RAM, Android Go, ARM Cortex-A53/A55) have strict background memory limits ($< 50\text{ MB}$ RSS). Heavy transformer models cause background process termination by the Android Low Memory Killer Daemon (`lmkd`).
 
@@ -99,21 +99,21 @@ The original implementation operated on several critical assumptions that broke 
 
 Silver Guard decouples commercial intent from malicious intent across four distinct classes:
 
-| Class ID | Semantic Class | Typical Senders | Key Characteristics & Behavior |
-| :---: | :--- | :--- | :--- |
-| `0` | **Safe Ham** | Personal contacts, banks (`AD-HDFCBK-T`), government (`JX-ISATHI-G`), service alerts (`MH-AIRTEL-S`) | OTPs, balance debits, family chats, courier delivery updates. Threat score: $\approx 0.0$. |
-| `1` | **Promotional** | Registered TRAI DLT senders with `-P` suffix or registered retail brands (`JK-SMRTBR`, `JM-AJIOIN`, `DOMINO`) | Legitimate e-commerce sales, discount codes, retail offers. High commerciality, zero security threat. |
-| `2` | **Commercial Spam (UCC)** | Unregistered 10-digit mobile numbers (`+919876543210`) | Unsolicited cold marketing (real estate, pre-approved personal loans, insurance leads). Do-Not-Disturb violation, but **no** credential theft or malware. |
-| `3` | **Scam / Phishing** | Unknown phone numbers, spoofed display headers | Digital arrest extortion, law enforcement intimidation (CBI/Customs), fake KYC deactivation, lottery fraud, malicious APK downloads. |
+| Class ID | Semantic Class            | Typical Senders                                                                                               | Key Characteristics & Behavior                                                                                                                            |
+| :------: | :------------------------ | :------------------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------------------------------------------------------------------------------------------------- |
+|   `0`    | **Safe Ham**              | Personal contacts, banks (`AD-HDFCBK-T`), government (`JX-ISATHI-G`), service alerts (`MH-AIRTEL-S`)          | OTPs, balance debits, family chats, courier delivery updates. Threat score: $\approx 0.0$.                                                                |
+|   `1`    | **Promotional**           | Registered TRAI DLT senders with `-P` suffix or registered retail brands (`JK-SMRTBR`, `JM-AJIOIN`, `DOMINO`) | Legitimate e-commerce sales, discount codes, retail offers. High commerciality, zero security threat.                                                     |
+|   `2`    | **Commercial Spam (UCC)** | Unregistered 10-digit mobile numbers (`+919876543210`)                                                        | Unsolicited cold marketing (real estate, pre-approved personal loans, insurance leads). Do-Not-Disturb violation, but **no** credential theft or malware. |
+|   `3`    | **Scam / Phishing**       | Unknown phone numbers, spoofed display headers                                                                | Digital arrest extortion, law enforcement intimidation (CBI/Customs), fake KYC deactivation, lottery fraud, malicious APK downloads.                      |
 
 ---
 
 ## ⚡ 3-Stage Cascaded Architecture
 
 ```
-Incoming SMS: (Header, Body)
-    │
-    ▼
+                        Incoming SMS: (Header, Body)
+                                    │
+                                    ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ STAGE 1: Deterministic Telecom Gateway (< 0.2 ms, 0 MB ML RAM)         │
 ├────────────────────────────────────────────────────────────────────────┤
@@ -123,7 +123,7 @@ Incoming SMS: (Header, Body)
 │ • Telecom Operator Shortcodes (1909, 56767)   ──► SAFE (HAM)           │
 │ >> Resolves 97.6% of messages instantly without neural weights! <<     │
 └───────────────────────────────────┬────────────────────────────────────┘
-                                    │ (Non-DLT / Unverified Sender)
+                       (Non-DLT / Unverified Sender)
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ STAGE 2: Multilingual Neural Inference (~1.2 ms, < 15 MB RAM)          │
@@ -133,7 +133,7 @@ Incoming SMS: (Header, Body)
 │ • NFC Canonical Normalization (Preserves Brahmic Matras & Emojis)      │
 │ • 4-Class Softmax Logits: [P(Ham), P(Promo), P(Spam_UCC), P(Scam)]     │
 └───────────────────────────────────┬────────────────────────────────────┘
-                                    │ (Base Threat & Commercial Probs)
+                     (Base Threat & Commercial Probs)
                                     ▼
 ┌────────────────────────────────────────────────────────────────────────┐
 │ STAGE 3: Evidentiary Risk & Commercial Synthesis (< 1.0 ms)            │
@@ -151,19 +151,21 @@ Incoming SMS: (Header, Body)
 
 Silver Guard deploys the **FastText Subword Domain Fusion** architecture (`FastTextDomainFusion`), replacing the legacy 105 MB MobileBERT baseline:
 
-| Architectural Dimension | Production Model: FastText Domain Fusion (`model/silverguard_fasttext_fusion.onnx`) | Legacy Baseline: MobileBERT (Deprecated) |
-| :--- | :--- | :--- |
-| **Model Type** | Dual-Branch Hybrid: FastText Subword Embeddings + Tabular MLP | Monolithic 24-Layer Transformer (`google/mobilebert-uncased`) |
-| **Model Disk Size** | **56 KB graph + 15.3 MB weights table** | 105.0 MB (FP32) / 26.2 MB (INT8) |
-| **Inference Latency (CPU)** | **~0.8–1.2 ms / SMS** | 18–25 ms / SMS |
-| **Peak RAM Footprint** | **< 15 MB** (Immune to Android Go LMKD process killing) | ~120 MB (Frequently killed on 2GB RAM phones) |
-| **Text Representation** | FastText character subword n-grams (lengths 3–5) via 32-bit CRC hashing into 60,000 buckets | WordPiece tokenization (30,522 vocab tokens) |
-| **Phonetic & Hinglish Resilience** | High: Character n-grams capture misspellings (`discnt`, `k-y-c`, `p0lice`) natively | Low: Out-of-vocabulary terms collapse into multiple noisy `[UNK]` tokens |
-| **Domain Feature Injection** | Direct: 12 handcrafted telecom features fused into hidden dense layer | Indirect: String concatenation `[CLS] HEADER [SEP] MESSAGE [SEP]` |
-| **Output** | 4-Class Softmax Vector (`[Ham, Promo, Spam, Scam]`) | Binary Logit / Threat Probability scalar |
+| Architectural Dimension            | Production Model: FastText Domain Fusion (`model/silverguard_fasttext_fusion.onnx`)         | Legacy Baseline: MobileBERT (Deprecated)                                 |
+| :--------------------------------- | :------------------------------------------------------------------------------------------ | :----------------------------------------------------------------------- |
+| **Model Type**                     | Dual-Branch Hybrid: FastText Subword Embeddings + Tabular MLP                               | Monolithic 24-Layer Transformer (`google/mobilebert-uncased`)            |
+| **Model Disk Size**                | **56 KB graph + 15.3 MB weights table**                                                     | 105.0 MB (FP32) / 26.2 MB (INT8)                                         |
+| **Inference Latency (CPU)**        | **~0.8–1.2 ms / SMS**                                                                       | 18–25 ms / SMS                                                           |
+| **Peak RAM Footprint**             | **< 15 MB** (Immune to Android Go LMKD process killing)                                     | ~120 MB (Frequently killed on 2GB RAM phones)                            |
+| **Text Representation**            | FastText character subword n-grams (lengths 3–5) via 32-bit CRC hashing into 60,000 buckets | WordPiece tokenization (30,522 vocab tokens)                             |
+| **Phonetic & Hinglish Resilience** | High: Character n-grams capture misspellings (`discnt`, `k-y-c`, `p0lice`) natively         | Low: Out-of-vocabulary terms collapse into multiple noisy `[UNK]` tokens |
+| **Domain Feature Injection**       | Direct: 12 handcrafted telecom features fused into hidden dense layer                       | Indirect: String concatenation `[CLS] HEADER [SEP] MESSAGE [SEP]`        |
+| **Output**                         | 4-Class Softmax Vector (`[Ham, Promo, Spam, Scam]`)                                         | Binary Logit / Threat Probability scalar                                 |
 
 ### What is "FastText Domain Fusion"?
+
 "FastText Domain Fusion" is a **dual-branch multimodal neural architecture**:
+
 1. **Branch 1 (Subword Linguistic Branch)**: Uses FastText-style character n-grams (Bojanowski et al., 2017) embedded via PyTorch `nn.EmbeddingBag(vocab_size=60000, embed_dim=64, mode="mean")`. Character n-grams (lengths 3 to 5) are hashed deterministically with 32-bit CRC. This provides language-agnostic phonetic invariance across Hindi, Hinglish, Marathi, and English.
 2. **Branch 2 (Domain Feature Tabular Branch)**: 12 handcrafted telecom and structural indicators (URL counts, shorteners, direct IPs, APK downloads, callback phones, currency counts, urgency triggers, promotional keywords, uppercase ratios, digit ratios, length, Indic script codes) pass through a 2-layer MLP (`12 -> 32 -> 32`, ReLU).
 3. **Early Fusion & Classification Head**: The 64-dim text embedding and 32-dim tabular embedding are concatenated (`torch.cat([text_emb, tab_emb], dim=1) -> 96 dim`) and fed into a classification head with dropout (`96 -> 4`) trained with class-balanced cross-entropy loss.
@@ -173,12 +175,14 @@ Silver Guard deploys the **FastText Subword Domain Fusion** architecture (`FastT
 ## 🌐 Multilingual Indic Script Support
 
 Indian SMS messages frequently contain regional languages and code-switching:
+
 - **Devanagari**: Hindi (`हिंदी`), Marathi (`मराठी`)
 - **Dravidian**: Tamil (`தமிழ்`), Telugu (`తెలుగు`), Kannada (`ಕನ್ನಡ`), Malayalam (`മലയാളം`)
 - **Eastern Indic**: Bengali (`বাংলা`), Gujarati (`ગુજરાતી`)
-- **Code-Switched Hinglish**: Hindi written in Latin script (*"Aapka account block ho gaya hai"*)
+- **Code-Switched Hinglish**: Hindi written in Latin script (_"Aapka account block ho gaya hai"_)
 
 Silver Guard's [`dataset_pipeline.py`](file:///c:/Users/tanis/Documents/VSC%20Projects/Python%20Projects/Silver%20Guard%20AI%20Model%20Training/dataset_pipeline.py) enforces **Indic-Safe Canonical NFC Normalization**:
+
 1. Strictly preserves Brahmic vowel signs (matras: `ा`, `ि`, `ी`, `ु`, `ू`), viramas (`्`), and nuktas.
 2. Strips only Western Latin combining accents (`Mn`), preventing character corruption.
 3. Whitespace-isolates emojis and Indic punctuation (danda `।` and double danda `॥`) to prevent token collapse.
@@ -241,6 +245,7 @@ python silverguard.py --contacts data/contacts.csv
 ```
 
 Example session:
+
 ```text
 Loading Silver Guard (model/silverguard_fasttext_fusion.onnx)...
 Loaded 44 contacts for whitelisting.
@@ -286,15 +291,16 @@ python silverguard.py --header "+919876543210" --message "CBI NOTICE: Arrest war
 
 Silver Guard trains on [`data/silverguard_indic_unified.json`](file:///c:/Users/tanis/Documents/VSC%20Projects/Python%20Projects/Silver%20Guard%20AI%20Model%20Training/data/silverguard_indic_unified.json), compiled from 5 datasets:
 
-| Dataset Source | Original Size | Extracted Subset | Ingested Classes | Purpose in Silver Guard |
-| :--- | :---: | :---: | :--- | :--- |
-| **Atherion Indian Scam SMS 30K** (Kaggle) | 30,000 | 19,500 | Ham (`0`), Spam (`2`), Scam (`3`) | Real Indian smishing, rental scams, fake KYC alerts |
-| **ScamShield Multilingual Smishing** (Kaggle) | 85,000+ | 4,500 | Ham (`0`), Scam (`3`) | Social engineering lures, urgent bank phishing |
-| **JuniorAlive India SMS Spam** (Kaggle) | 2,267 | 2,267 | Ham (`0`), Spam (`2`), Scam (`3`) | Real Indian SMS spam, telecom service notifications |
-| **UCI SMS Spam Collection** (Kaggle) | 5,572 | 5,572 | Ham (`0`), Spam (`2`), Scam (`3`) | Natural interpersonal English conversational chats |
-| **Personal Indian SMS Inbox** (`rawdata.json`) | 5,226 | 5,154 | Ham (`0`), Promo (`1`), Spam (`2`) | Active Indian inbox ground truth (DLT headers, personal SMS) |
+| Dataset Source                                 | Original Size | Extracted Subset | Ingested Classes                   | Purpose in Silver Guard                                      |
+| :--------------------------------------------- | :-----------: | :--------------: | :--------------------------------- | :----------------------------------------------------------- |
+| **Atherion Indian Scam SMS 30K** (Kaggle)      |    30,000     |      19,500      | Ham (`0`), Spam (`2`), Scam (`3`)  | Real Indian smishing, rental scams, fake KYC alerts          |
+| **ScamShield Multilingual Smishing** (Kaggle)  |    85,000+    |      4,500       | Ham (`0`), Scam (`3`)              | Social engineering lures, urgent bank phishing               |
+| **JuniorAlive India SMS Spam** (Kaggle)        |     2,267     |      2,267       | Ham (`0`), Spam (`2`), Scam (`3`)  | Real Indian SMS spam, telecom service notifications          |
+| **UCI SMS Spam Collection** (Kaggle)           |     5,572     |      5,572       | Ham (`0`), Spam (`2`), Scam (`3`)  | Natural interpersonal English conversational chats           |
+| **Personal Indian SMS Inbox** (`rawdata.json`) |     5,226     |      5,154       | Ham (`0`), Promo (`1`), Spam (`2`) | Active Indian inbox ground truth (DLT headers, personal SMS) |
 
 After PII sanitization, URL threat classification, and inverted-index shingle deduplication, the dataset contains **24,514 unique samples**:
+
 - **Class 0 (Safe Ham)**: 17,013 (69.4%)
 - **Class 1 (Promotional)**: 728 (3.0%)
 - **Class 2 (Commercial Spam UCC)**: 1,884 (7.7%)
@@ -378,17 +384,17 @@ OK
 
 Specialized academic and architectural research documents in `docs/`:
 
-| Document | Primary Scope | Key Takeaway |
-| :--- | :--- | :--- |
-| [`docs/repository_audit.md`](docs/repository_audit.md) | Forensic audit of old code, models, and datasets | Root cause isolation of the 96.8% FPR and 25 false positives |
-| [`docs/classification_taxonomy.md`](docs/classification_taxonomy.md) | 4-Class semantic taxonomy specification | Formal boundaries separating Promo from UCC Spam and Scam |
-| [`docs/multilingual_nlp_research.md`](docs/multilingual_nlp_research.md) | Indic NLP, Brahmic scripts, and Unicode NFC | Mathematical and linguistic justification for NFC normalization |
-| [`docs/datasets_research.md`](docs/datasets_research.md) | Survey of external datasets & curation strategy | Specifications for Atherion 30K, ScamShield, and SilverGuard corpus |
-| [`docs/model_architecture_research.md`](docs/model_architecture_research.md) | Mobile hardware profiling & edge benchmarks | Detailed CPU/RAM/Battery profiling on ARM Cortex-A53 |
-| [`docs/evaluation_strategy.md`](docs/evaluation_strategy.md) | Asymmetric cost matrix & template leakage | Evaluation protocols preventing synthetic data leakage |
-| [`docs/research_references.md`](docs/research_references.md) | Peer-reviewed academic bibliography | Citations for FastText, MuRIL, IndicBERT, and TRAI TCCCPR |
-| [`docs/model_comparison_benchmark.md`](docs/model_comparison_benchmark.md) | Empirical 5,153 message benchmark report | Full item-by-item triage of the 25 legacy false positives |
-| [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md) | Actionable 5-phase engineering roadmap | Milestone schedule for enterprise mobile deployment |
+| Document                                                                     | Primary Scope                                    | Key Takeaway                                                        |
+| :--------------------------------------------------------------------------- | :----------------------------------------------- | :------------------------------------------------------------------ |
+| [`docs/repository_audit.md`](docs/repository_audit.md)                       | Forensic audit of old code, models, and datasets | Root cause isolation of the 96.8% FPR and 25 false positives        |
+| [`docs/classification_taxonomy.md`](docs/classification_taxonomy.md)         | 4-Class semantic taxonomy specification          | Formal boundaries separating Promo from UCC Spam and Scam           |
+| [`docs/multilingual_nlp_research.md`](docs/multilingual_nlp_research.md)     | Indic NLP, Brahmic scripts, and Unicode NFC      | Mathematical and linguistic justification for NFC normalization     |
+| [`docs/datasets_research.md`](docs/datasets_research.md)                     | Survey of external datasets & curation strategy  | Specifications for Atherion 30K, ScamShield, and SilverGuard corpus |
+| [`docs/model_architecture_research.md`](docs/model_architecture_research.md) | Mobile hardware profiling & edge benchmarks      | Detailed CPU/RAM/Battery profiling on ARM Cortex-A53                |
+| [`docs/evaluation_strategy.md`](docs/evaluation_strategy.md)                 | Asymmetric cost matrix & template leakage        | Evaluation protocols preventing synthetic data leakage              |
+| [`docs/research_references.md`](docs/research_references.md)                 | Peer-reviewed academic bibliography              | Citations for FastText, MuRIL, IndicBERT, and TRAI TCCCPR           |
+| [`docs/model_comparison_benchmark.md`](docs/model_comparison_benchmark.md)   | Empirical 5,153 message benchmark report         | Full item-by-item triage of the 25 legacy false positives           |
+| [`docs/implementation_roadmap.md`](docs/implementation_roadmap.md)           | Actionable 5-phase engineering roadmap           | Milestone schedule for enterprise mobile deployment                 |
 
 ---
 
@@ -412,6 +418,7 @@ When working on this repository, all engineers and autonomous agents must strict
 ## 🤝 Contributing
 
 We welcome contributions to Silver Guard!
+
 1. Fork the repository.
 2. Create a feature branch: `git checkout -b feature/better-indic-heuristics`.
 3. Ensure all tests pass: `python -m unittest discover -s tests`.
@@ -425,5 +432,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ---
 
-*Made with ❤️ by Tanishq Mudaliar*  
-*Protecting Indian Citizens from Smishing, Digital Arrest Cyber Extortion, and Telemarketing Spam.*
+_Made with ❤️ by Tanishq Mudaliar_  
+_Protecting Indian Citizens from Smishing, Digital Arrest Cyber Extortion, and Telemarketing Spam._
