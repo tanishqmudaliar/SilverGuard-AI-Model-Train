@@ -3,15 +3,12 @@
 # ----------------------------
 data/
 backup/
-model/silver_guard_backup.zip
-model/silver_guard_flutter.zip
 
 # ----------------------------
-# Model Files
+# Model Weights (Hosted on Hugging Face)
 # ----------------------------
-model/silver_guard.onnx
-model/vocab.txt
-model/*.json
+*.onnx
+*.onnx.data
 
 # ----------------------------
 # Environment & Secrets
@@ -19,3 +16,5 @@ model/*.json
 kaggle.json
 *.env
 .venv/
+__pycache__/
+*.pyc

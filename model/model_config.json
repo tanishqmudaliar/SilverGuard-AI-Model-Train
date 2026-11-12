@@ -1,0 +1,27 @@
+{
+  "taxonomy_version": "2.0",
+  "primary_model_type": "fasttext_domain_fusion",
+  "model_file": "silverguard_fasttext_fusion.onnx",
+  "vocab_size": 60000,
+  "embed_dim": 64,
+  "tabular_dim": 12,
+  "macro_f1": 0.8996,
+  "test_accuracy": 94.94,
+  "model_size_mb": 0.05,
+  "labels": {
+    "0": "ham",
+    "1": "promotional",
+    "2": "commercial_spam",
+    "3": "scam"
+  },
+  "supported_languages": [
+    "en",
+    "hi",
+    "mr",
+    "ta",
+    "te",
+    "bn",
+    "gu",
+    "hinglish"
+  ]
+}
