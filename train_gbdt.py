@@ -31,7 +31,14 @@ from sklearn.metrics import classification_report, confusion_matrix, f1_score
 from sklearn.model_selection import train_test_split
 import lightgbm as lgb
 
-from label_sms import parse_sender_info, normalize_phone, DLT_PATTERN, SUSPICIOUS_SHORTENERS, EXTORTION_KEYWORDS, KYC_PHISHING_KEYWORDS, FRAUD_LURE_KEYWORDS, PROMO_KEYWORDS
+from silverguard import (
+    normalize_phone,
+    DLT_PATTERN,
+    SUSPICIOUS_SHORTENERS,
+    EXTORTION_KEYWORDS,
+    KYC_PHISHING_KEYWORDS,
+    FRAUD_LURE_KEYWORDS
+)
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1. Handcrafted Telecom Domain Feature Extractor (12 Features)
