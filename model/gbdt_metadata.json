@@ -1,0 +1,40 @@
+{
+  "model_type": "LightGBM + FastText Subword Char N-Grams",
+  "macro_f1": 0.9499,
+  "weighted_f1": 0.9783,
+  "train_samples": 19611,
+  "test_samples": 4903,
+  "confusion_matrix": [
+    [
+      3397,
+      1,
+      2,
+      3
+    ],
+    [
+      5,
+      140,
+      0,
+      0
+    ],
+    [
+      1,
+      0,
+      323,
+      53
+    ],
+    [
+      2,
+      0,
+      39,
+      937
+    ]
+  ],
+  "model_size_mb": 1.5,
+  "vectorizer_size_mb": 0.11,
+  "features": {
+    "n_text_features": 12000,
+    "n_domain_features": 12,
+    "total_features": 12012
+  }
+}

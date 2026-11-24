@@ -5,12 +5,6 @@ data/
 backup/
 
 # ----------------------------
-# Model Weights (Hosted on Hugging Face)
-# ----------------------------
-*.onnx
-*.onnx.data
-
-# ----------------------------
 # Environment & Secrets
 # ----------------------------
 kaggle.json
