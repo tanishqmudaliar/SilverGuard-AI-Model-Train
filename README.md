@@ -7,7 +7,7 @@ Designed specifically for Indian telecommunications (TRAI DLT sender headers, re
 ![Python](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)
 ![ONNX Runtime](https://img.shields.io/badge/Runtime-ONNX-005CED?logo=onnx&logoColor=white)
 ![Architecture](https://img.shields.io/badge/Architecture-FastText%20Domain%20Fusion-FF6F00?logo=pytorch&logoColor=white)
-![Model Size](https://img.shields.io/badge/ONNX%20Size-56%20KB-success)
+![Model Size](https://img.shields.io/badge/Model%20Size-15.4%20MB-success)
 ![Taxonomy](https://img.shields.io/badge/Taxonomy-4--Class%20v2.0-brightgreen)
 ![Indic NLP](https://img.shields.io/badge/Multilingual-Hindi%20%7C%20Marathi%20%7C%20Tamil%20%7C%20Telugu-blueviolet)
 ![Tests](https://img.shields.io/badge/Tests-28%20Passed-success)
@@ -195,24 +195,27 @@ Silver Guard's [`dataset_pipeline.py`](file:///c:/Users/tanis/Documents/VSC%20Pr
 .
 ├── silverguard.py                  # Production cascaded inference engine (CLI, JSON & REPL)
 ├── train_model.py                  # PyTorch FastText Domain Fusion training & ONNX export script
+├── train_gbdt.py                   # LightGBM GBDT multi-class training script
 ├── build_unified_dataset.py        # 5-source dataset aggregator, cleaner & balancer
 ├── dataset_pipeline.py             # PII sanitization, URL tokenization & shingle deduplication
 ├── label_sms.py                    # 4-class auto-labeling script with DLT parser
 ├── merge_labels.py                 # Review merger for manual audit samples
-├── main.ipynb                      # Google Colab training notebook
+├── main.ipynb                      # Google Colab / Jupyter training notebook
 │
-├── model/
+├── model/                          # Trained model artifacts (Tracked directly in Git & Hugging Face)
 │   ├── silverguard_fasttext_fusion.onnx       # Primary FastText ONNX compute graph (56 KB)
-│   ├── silverguard_fasttext_fusion.onnx.data  # Subword embedding weights table (15.3 MB)
-│   ├── model_config.json                      # Model metadata, taxonomy, and metrics
-│   └── MODEL_HOSTING.md                       # Hugging Face model hosting & download instructions
+│   ├── silverguard_fasttext_fusion.onnx.data  # Subword embedding weights table (15.36 MB)
+│   ├── silverguard_gbdt.joblib                # LightGBM GBDT multi-class model (1.50 MB)
+│   ├── char_vectorizer.joblib                 # Subword character n-gram TF-IDF vectorizer (112 KB)
+│   ├── gbdt_metadata.json                     # GBDT training metadata & evaluation metrics
+│   ├── model_config.json                      # ONNX model metadata, taxonomy, and metrics
+│   ├── HF_README.md                           # Hugging Face Model Card README
+│   └── MODEL_HOSTING.md                       # Model distribution & Hugging Face CLI guide
 │
 ├── data/
 │   ├── silverguard_indic_unified.json    # Gold-standard 24,514 unique 4-class dataset
 │   ├── rawdata.json                      # 5,226 raw personal SMS messages
 │   ├── contacts.csv                      # Whitelisted address book contacts
-│   ├── first_model_output.csv            # Empirical baseline logs (Iteration 1: 96.8% FPR)
-│   ├── second_model_output.csv           # Empirical benchmark logs (Iteration 2: 25 false positives)
 │   └── external/                         # Ingested datasets (Atherion 30K, ScamShield, JuniorAlive, UCI)
 │
 ├── tests/                                # Comprehensive test suite (32 tests passing)
@@ -341,13 +344,72 @@ Evaluated across **5,153 real-world personal SMS messages** in [`data/second_mod
 | Iteration 2 FPs Eliminated         | 0 / 25             | 0 / 25             | 25 / 25 (100% Resolved) |
 | Total Benchmark Execution Time     | ~115.0 seconds     | ~115.0 seconds     | 2.008 seconds           |
 | Average Latency per SMS            | 22.3 ms            | 22.3 ms            | 0.390 ms (57.3x faster!)|
-| Model Binary Size (ONNX)           | 105.0 MB           | 105.0 MB           | 0.05 MB (50 KB!)        |
+| Model Binary Size (ONNX)           | 105.0 MB           | 105.0 MB           | 15.4 MB (56KB + 15.36MB)|
 | Peak Inference RAM                 | ~120 MB            | ~120 MB            | < 15 MB (LMKD Immune)   |
 | Messages Handled in Stage 1 (<0.2ms)| 0 (0.0%)          | 0 (0.0%)           | 5,031 (97.6%)           |
 | Indic Matras (Brahmic Vowels)      | Stripped (NFD Mn)  | Stripped (NFD Mn)  | 100% Preserved (NFC)    |
 | Emoji Tokenization                 | [UNK] Collapse     | [UNK] Collapse     | Isolated Clean Tokens   |
 +------------------------------------+--------------------+--------------------+-------------------------+
 ```
+
+### 🎯 Held-Out Test Evaluation & 4x4 Confusion Matrices (4,903 Unseen Messages)
+
+Both models were evaluated on a stratified 20% test split (**4,903 messages**) held out from the 24,514-sample unified dataset (`silverguard_indic_unified.json`):
+
+#### Model 1: Production On-Device FastText Domain Fusion (`silverguard_fasttext_fusion.onnx`)
+* **Target Environment**: Android / iOS / Flutter edge deployment (15.4 MB total, < 22 MB RAM, ~1.2 ms latency)
+* **Overall Accuracy**: **94.94%** | **Macro F1**: **89.94%** | **Weighted F1**: **94.96%**
+
+```text
+              precision    recall  f1-score   support
+
+         Ham     0.9793    0.9736    0.9764      3403
+       Promo     0.8533    0.8828    0.8678       145
+    Spam_UCC     0.8399    0.8488    0.8443       377
+        Scam     0.9039    0.9141    0.9090       978
+
+    accuracy                         0.9494      4903
+   macro avg     0.8941    0.9048    0.8994      4903
+weighted avg     0.9498    0.9494    0.9496      4903
+```
+
+**4x4 Confusion Matrix (ONNX Edge Model):**
+```text
+               Pred_Ham  Pred_Promo  Pred_Spam  Pred_Scam
+Actual_Ham   :      3313          17         21         52
+Actual_Promo :        11         128          2          4
+Actual_Spam  :        16           2        320         39
+Actual_Scam  :        43           3         38        894
+```
+
+---
+
+#### Model 2: Server / Microservice LightGBM GBDT (`silverguard_gbdt.joblib`)
+* **Target Environment**: Python backend / server microservice (1.50 MB model, 0.11 MB vectorizer, < 18 MB RAM)
+* **Overall Accuracy**: **97.84%** | **Macro F1**: **94.99%** | **Weighted F1**: **97.83%**
+
+```text
+              precision    recall  f1-score   support
+
+         Ham     0.9977    0.9982    0.9979      3403
+       Promo     0.9929    0.9655    0.9790       145
+    Spam_UCC     0.8874    0.8568    0.8718       377
+        Scam     0.9436    0.9581    0.9508       978
+
+    accuracy                         0.9784      4903
+   macro avg     0.9554    0.9446    0.9499      4903
+weighted avg     0.9782    0.9784    0.9783      4903
+```
+
+**4x4 Confusion Matrix (GBDT Server Model):**
+```text
+               Pred_Ham  Pred_Promo  Pred_Spam  Pred_Scam
+Actual_Ham   :      3397           1          2          3
+Actual_Promo :         5         140          0          0
+Actual_Spam  :         1           0        323         53
+Actual_Scam  :         2           0         39        937
+```
+*(Out of 3,403 actual Ham messages in the test set, **3,397 were correctly classified** by GBDT with only 3 false positives into Scam).*
 
 ---
 

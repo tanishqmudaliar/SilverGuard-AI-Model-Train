@@ -99,6 +99,55 @@ Silver Guard uses a dual-branch hybrid architecture designed for zero out-of-voc
 | **Hinglish / Leetspeak Handling** | **Character n-grams (Zero OOV)** | High OOV (`[UNK]` tokens) |
 | **Indic Matras Preservation** | **100% (Canonical NFC Normalization)** | Erased by standard ASCII tokenizers |
 
+### 🎯 Empirical Evaluation on Held-Out Test Set (4,903 Unseen SMS)
+
+Both models were evaluated on a stratified 20% test split (**4,903 messages**) held out from the 24,514-sample unified dataset (`silverguard_indic_unified.json`):
+
+#### 1. FastText Subword Domain Fusion ONNX (`silverguard_fasttext_fusion.onnx`)
+- **Target**: Android / iOS / Flutter mobile edge deployment (15.4 MB total, < 22 MB RAM, ~1.2 ms latency)
+- **Overall Accuracy**: **94.94%** | **Macro F1**: **89.94%** | **Weighted F1**: **94.96%**
+
+| Class | Precision | Recall | F1-Score | Support |
+| :--- | :---: | :---: | :---: | :---: |
+| **Ham (`0`)** | 0.9793 | 0.9736 | 0.9764 | 3,403 |
+| **Promotional (`1`)** | 0.8533 | 0.8828 | 0.8678 | 145 |
+| **Commercial Spam UCC (`2`)** | 0.8399 | 0.8488 | 0.8443 | 377 |
+| **Scam / Phishing (`3`)** | 0.9039 | 0.9141 | 0.9090 | 978 |
+| **Macro Average** | **0.8941** | **0.9048** | **0.8994** | 4,903 |
+| **Weighted Average** | **0.9498** | **0.9494** | **0.9496** | 4,903 |
+
+**4x4 Confusion Matrix (ONNX Edge Model):**
+```text
+               Pred_Ham  Pred_Promo  Pred_Spam  Pred_Scam
+Actual_Ham   :      3313          17         21         52
+Actual_Promo :        11         128          2          4
+Actual_Spam  :        16           2        320         39
+Actual_Scam  :        43           3         38        894
+```
+
+#### 2. LightGBM GBDT with Domain Feature Fusion (`silverguard_gbdt.joblib`)
+- **Target**: Python server backend / microservice (1.50 MB model, 0.11 MB vectorizer, < 18 MB RAM)
+- **Overall Accuracy**: **97.84%** | **Macro F1**: **94.99%** | **Weighted F1**: **97.83%**
+
+| Class | Precision | Recall | F1-Score | Support |
+| :--- | :---: | :---: | :---: | :---: |
+| **Ham (`0`)** | 0.9977 | 0.9982 | 0.9979 | 3,403 |
+| **Promotional (`1`)** | 0.9929 | 0.9655 | 0.9790 | 145 |
+| **Commercial Spam UCC (`2`)** | 0.8874 | 0.8568 | 0.8718 | 377 |
+| **Scam / Phishing (`3`)** | 0.9436 | 0.9581 | 0.9508 | 978 |
+| **Macro Average** | **0.9554** | **0.9446** | **0.9499** | 4,903 |
+| **Weighted Average** | **0.9782** | **0.9784** | **0.9783** | 4,903 |
+
+**4x4 Confusion Matrix (GBDT Model):**
+```text
+               Pred_Ham  Pred_Promo  Pred_Spam  Pred_Scam
+Actual_Ham   :      3397           1          2          3
+Actual_Promo :         5         140          0          0
+Actual_Spam  :         1           0        323         53
+Actual_Scam  :         2           0         39        937
+```
+*(Out of 3,403 actual Ham messages in the test set, **3,397 were correctly classified** by GBDT with only 3 false positives into Scam).*
+
 ---
 
 ## 📊 Multi-Source Training Dataset (24,514 Unique Samples)

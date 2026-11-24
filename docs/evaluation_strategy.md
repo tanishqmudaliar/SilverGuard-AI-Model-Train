@@ -189,3 +189,56 @@ Instead of picking an arbitrary $0.50$ threshold, the production threshold $\tau
 $$\tau^* = \arg\min_\tau \left( C_{\text{FP}} \cdot \text{FPR}(\tau) \cdot P(\text{Ham}) + C_{\text{FN}} \cdot (1 - \text{TPR}(\tau)) \cdot P(\text{Scam}) \right)$$
 
 Given the high cost of false positives ($C_{\text{FP}} \gg C_{\text{FN}}$) in telecom communications, the optimal operational threshold $\tau^*$ will naturally calibrate to a higher, more conservative operating point (typically $\tau^* \approx 0.82 - 0.88$), effectively eliminating promotional false positives while retaining high recall on overt cyber fraud.
+
+---
+
+## 7. Empirical Test Set Evaluation: 4-Class Matrices
+
+The validation protocol was executed on **4,903 held-out test messages** (20% stratified test split from `silverguard_indic_unified.json`), evaluating both the on-device FastText Domain Fusion ONNX model and the LightGBM GBDT model:
+
+### 7.1 FastText Domain Fusion ONNX (Mobile Edge Architecture)
+- **Macro F1**: **0.8994 (89.94%)** | **Accuracy**: **94.94%**
+
+```text
+              precision    recall  f1-score   support
+
+         Ham     0.9793    0.9736    0.9764      3403
+       Promo     0.8533    0.8828    0.8678       145
+    Spam_UCC     0.8399    0.8488    0.8443       377
+        Scam     0.9039    0.9141    0.9090       978
+
+    accuracy                         0.9494      4903
+   macro avg     0.8941    0.9048    0.8994      4903
+weighted avg     0.9498    0.9494    0.9496      4903
+
+4x4 Confusion Matrix (Rows = Actual, Columns = Predicted):
+               Pred_Ham  Pred_Promo  Pred_Spam  Pred_Scam
+Actual_Ham   :      3313          17         21         52
+Actual_Promo :        11         128          2          4
+Actual_Spam  :        16           2        320         39
+Actual_Scam  :        43           3         38        894
+```
+
+### 7.2 LightGBM GBDT with Domain Feature Fusion (Server Microservice)
+- **Macro F1**: **0.9499 (94.99%)** | **Accuracy**: **97.84%**
+
+```text
+              precision    recall  f1-score   support
+
+         Ham     0.9977    0.9982    0.9979      3403
+       Promo     0.9929    0.9655    0.9790       145
+    Spam_UCC     0.8874    0.8568    0.8718       377
+        Scam     0.9436    0.9581    0.9508       978
+
+    accuracy                         0.9784      4903
+   macro avg     0.9554    0.9446    0.9499      4903
+weighted avg     0.9782    0.9784    0.9783      4903
+
+4x4 Confusion Matrix (Rows = Actual, Columns = Predicted):
+               Pred_Ham  Pred_Promo  Pred_Spam  Pred_Scam
+Actual_Ham   :      3397           1          2          3
+Actual_Promo :         5         140          0          0
+Actual_Spam  :         1           0        323         53
+Actual_Scam  :         2           0         39        937
+```
+*(Out of 3,403 actual Ham messages in the test set, **3,397 were correctly classified** by GBDT with only 3 false positives into Scam).*
